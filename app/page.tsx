@@ -149,6 +149,13 @@ function isCallbackOverdue(lead: any) {
 }
 
 filteredLeads.sort((a, b) => {
+  if (a.priority && !b.priority) {
+    return -1;
+  }
+
+  if (!a.priority && b.priority) {
+    return 1;
+  }
   const aIsCold = !a.status || a.status === "";
   const bIsCold = !b.status || b.status === "";
 
@@ -189,6 +196,12 @@ filteredLeads.sort((a, b) => {
 
 const currentLead = searchedLeads[currentIndex];
 
+useEffect(() => {
+  if (currentIndex >= searchedLeads.length) {
+    setCurrentIndex(0);
+  }
+}, [searchedLeads, currentIndex]);
+
   const today = new Date().toLocaleDateString("en-CA");
   const todayString = new Date().toISOString().split("T")[0];
 
@@ -214,6 +227,10 @@ const currentLead = searchedLeads[currentIndex];
 
     return callbackDateTime <= new Date();
   });
+
+  const priorityLeads = leads.filter(
+    (lead) => lead.priority
+  );
 
   const callbackLeads = leads.filter(
   (lead) => lead.status === "rueckruf"
@@ -461,6 +478,42 @@ const currentLead = searchedLeads[currentIndex];
           </div>
         </header>
         
+        {priorityLeads.length > 0 && (
+          <div className="mb-4 rounded-2xl bg-red-950 border border-red-700 p-4 flex items-center justify-between">
+
+            <div>
+              <p className="font-bold text-red-300">
+                🔥 PRIORITY Leads
+              </p>
+
+              <p className="text-sm text-red-200 mt-1">
+                {priorityLeads.length} heiße Leads warten
+              </p>
+            </div>
+
+            <button
+              onClick={() => {
+                const firstPriorityLead = priorityLeads[0];
+
+                const index = filteredLeads.findIndex(
+                  (lead) => lead.ID === firstPriorityLead.ID
+                );
+
+                setCurrentIndex(index >= 0 ? index : 0);
+
+                window.scrollTo({
+                  top: 500,
+                  behavior: "smooth",
+                });
+              }}
+              className="rounded-xl bg-red-600 px-4 py-2 font-semibold"
+            >
+              Öffnen
+            </button>
+
+          </div>
+        )}
+
         {dueCallbacks.length > 0 && (
           <div className="mb-6 rounded-2xl bg-red-950 border border-red-700 p-4 flex items-center justify-between">
             <div>
@@ -542,7 +595,16 @@ const currentLead = searchedLeads[currentIndex];
       setActiveTab("alle");
       setCurrentIndex(0);
     }}
-    className="rounded-xl bg-white text-black px-4 py-2 font-semibold"
+
+    className={`
+      rounded-xl px-4 py-2 font-semibold
+
+      ${
+        activeTab === "alle"
+          ? "bg-white text-black"
+          : "bg-zinc-800 text-white"
+      }
+    `}
   >
     Alle ({leads.length})
   </button>
@@ -552,7 +614,15 @@ const currentLead = searchedLeads[currentIndex];
       setActiveTab("offen");
       setCurrentIndex(0);
     }}
-    className="rounded-xl bg-zinc-800 px-4 py-2"
+    className={`
+      rounded-xl px-4 py-2
+
+      ${
+        activeTab === "offen"
+          ? "bg-white text-black font-semibold"
+          : "bg-zinc-800 text-white"
+      }
+    `}
   >
     Offene ({openLeads.length})
   </button>
@@ -562,7 +632,15 @@ const currentLead = searchedLeads[currentIndex];
       setActiveTab("rueckruf");
       setCurrentIndex(0);
     }}
-    className="rounded-xl bg-yellow-600 px-4 py-2"
+    className={`
+      rounded-xl px-4 py-2
+
+      ${
+        activeTab === "rueckruf"
+          ? "bg-yellow-500 text-black font-semibold"
+          : "bg-zinc-800 text-white"
+      }
+    `}
   >
     Rückrufe ({leads.filter((lead) => lead.status === "rueckruf").length})
   </button>
@@ -667,6 +745,7 @@ const currentLead = searchedLeads[currentIndex];
               callback_date: currentLead.callback_date,
               callback_time: currentLead.callback_time,
               retry_count: currentLead.retry_count,
+              priority: currentLead.priority,
             }}
           />
 
@@ -717,6 +796,45 @@ const currentLead = searchedLeads[currentIndex];
             )}
 
             <div className="mt-6 space-y-3">
+              <button
+                onClick={async () => {
+                  const newPriority = !currentLead.priority;
+
+                  await supabase
+                    .from("leads")
+                    .update({
+                      priority: newPriority,
+                    })
+                    .eq("ID", currentLead.ID);
+
+                  await supabase.from("activities").insert([
+                    {
+                      lead_id: currentLead.ID,
+                      type: "priority",
+                      text: newPriority
+                        ? "🔥 Lead als PRIORITY markiert"
+                        : "Priority entfernt",
+                    },
+                  ]);
+
+                  await fetchActivities(currentLead.ID);
+                  fetchLeads();
+                }}
+                className={`
+                  w-full rounded-xl py-3 font-semibold
+
+                  ${
+                    currentLead.priority
+                      ? "bg-red-700"
+                      : "bg-zinc-800"
+                  }
+                `}
+              >
+                {currentLead.priority
+                  ? "🔥 PRIORITY entfernen"
+                  : "🔥 Als PRIORITY markieren"}
+              </button>
+
               <button
                 onClick={() => updateLead("interessiert")}
                 className="w-full rounded-xl bg-green-600 py-3 font-semibold"

@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 type Lead = {
   name: string;
   phone: string;
@@ -9,6 +13,7 @@ type Lead = {
   callback_date?: string;
   callback_time?: string;
   retry_count?: number;
+  priority?: boolean;
 };
 
 type LeadCardProps = {
@@ -16,6 +21,8 @@ type LeadCardProps = {
 };
 
 export function LeadCard({ lead }: LeadCardProps) {
+  const [showPreview, setShowPreview] = useState(false);
+
   const now = new Date();
 
   const callbackDateTime =
@@ -33,33 +40,29 @@ export function LeadCard({ lead }: LeadCardProps) {
     callbackDateTime &&
     callbackDateTime <= now;
 
-  const isCold =
-    !lead.status || lead.status === "";
+  const isCold = !lead.status || lead.status === "";
 
   return (
     <div
-        className={`
-            col-span-2 rounded-2xl border p-6 transition-all
+      className={`
+        col-span-2 rounded-2xl border p-6 transition-all
 
-            ${
-                isOverdue
-                    ? "bg-red-950 border-red-700 shadow-[0_0_40px_rgba(255,0,0,0.25)]"
-                    :isDue
-                    ? "bg-yellow-950 border-yellow-700 shadow-[0_0_40px_rgba(255,200,0,0.2)]"
-                    : isCold
-                    ? "bg-blue-950 border-blue-700 shadow-[0_0_30px_rgba(0,100,255,0.15)]"
-                    : "bg-zinc-900 border-zinc-800"
-            }
-        `}
+        ${
+          isOverdue
+            ? "bg-red-950 border-red-700 shadow-[0_0_40px_rgba(255,0,0,0.25)]"
+            : isDue
+            ? "bg-yellow-950 border-yellow-700 shadow-[0_0_40px_rgba(255,200,0,0.2)]"
+            : isCold
+            ? "bg-blue-950 border-blue-700 shadow-[0_0_30px_rgba(0,100,255,0.15)]"
+            : "bg-zinc-900 border-zinc-800"
+        }
+      `}
     >
       <p className="text-sm text-zinc-400">Aktueller Lead</p>
 
-      <h2 className="text-3xl font-bold mt-2">
-        {lead.name}
-      </h2>
+      <h2 className="text-3xl font-bold mt-2">{lead.name}</h2>
 
       <div className="mt-3">
-
         <p
           className={`
             text-sm mt-2 font-medium
@@ -96,6 +99,11 @@ export function LeadCard({ lead }: LeadCardProps) {
           {lead.status || "offen"}
         </span>
 
+        {lead.priority && (
+          <p className="mt-3 inline-block rounded-full bg-red-600 px-3 py-1 text-sm font-bold">
+            🔥 PRIORITY
+          </p>
+        )}
       </div>
 
       <div className="mt-6 space-y-3 text-lg">
@@ -105,11 +113,17 @@ export function LeadCard({ lead }: LeadCardProps) {
       </div>
 
       <div className="mt-6 flex gap-3">
+        <button
+          onClick={() => setShowPreview(!showPreview)}
+          className="rounded-xl bg-white text-black px-5 py-3 font-semibold"
+        >
+          {showPreview ? "mobile.de ausblenden" : "mobile.de Vorschau"}
+        </button>
 
         <a
           href={lead.mobileLink}
           target="_blank"
-          className="rounded-xl bg-white text-black px-5 py-3 font-semibold"
+          className="rounded-xl bg-zinc-700 px-5 py-3 font-semibold"
         >
           mobile.de öffnen
         </a>
@@ -120,8 +134,16 @@ export function LeadCard({ lead }: LeadCardProps) {
         >
           Anrufen
         </a>
-
       </div>
+
+      {showPreview && (
+        <div className="mt-6 rounded-2xl overflow-hidden border border-zinc-700 bg-white">
+          <iframe
+            src={lead.mobileLink}
+            className="w-full h-[700px]"
+          />
+        </div>
+      )}
     </div>
   );
 }
