@@ -99,6 +99,10 @@ export function LeadCard({ lead }: LeadCardProps) {
           {lead.status || "offen"}
         </span>
 
+        <p className="mt-3 text-sm text-zinc-400">
+          👤 Zuständig: {lead.assigned_to || "Nicht übernommen"}
+        </p>
+
         {lead.priority && (
           <p className="mt-3 inline-block rounded-full bg-red-600 px-3 py-1 text-sm font-bold">
             🔥 PRIORITY
