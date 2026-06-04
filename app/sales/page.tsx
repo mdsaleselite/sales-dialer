@@ -20,6 +20,19 @@ function SalesPageContent() {
   const [activeTab, setActiveTab] = useState("alle");
   const [search, setSearch] = useState("");
   const [showTeam, setShowTeam] = useState(false);
+  const [currentUser, setCurrentUser] = useState("Miguel");
+
+useEffect(() => {
+  const savedUser = localStorage.getItem("crm_user");
+
+  if (savedUser) {
+    setCurrentUser(savedUser);
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("crm_user", currentUser);
+}, [currentUser]);
 
   const noteRef = useRef<HTMLTextAreaElement | null>(null);
   const searchParams = useSearchParams();
@@ -128,10 +141,10 @@ function SalesPageContent() {
 
   const filteredLeads = leads.filter((lead) => {
     if (activeTab === "meine") {
-      return lead.assigned_to === "Miguel";
+      return lead.assigned_to === currentUser;
     }
 
-    if (!showTeam && lead.assigned_to && lead.assigned_to !== "Miguel") {
+    if (!showTeam && lead.assigned_to && lead.assigned_to !== currentUser) {
       return false;
     }
 
@@ -481,6 +494,29 @@ function SalesPageContent() {
         <header className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold">Sales Dialer</h1>
+            <div className="mt-3 flex gap-2">
+              <button
+                  onClick={() => setCurrentUser("Miguel")}
+                  className={`px-3 py-1 rounded-lg ${
+                    currentUser === "Miguel"
+                      ? "bg-blue-600"
+                      : "bg-zinc-800"
+                    }`}
+              >
+                    Miguel
+              </button>
+
+              <button
+                onClick={() => setCurrentUser("David")}
+                className={`px-3 py-1 rounded-lg ${
+                  currentUser === "David"
+                    ? "bg-purple-600"
+                    : "bg-zinc-800"
+                }`}
+              >
+                David
+              </button>
+            </div>
             <p className="text-zinc-400 mt-2">CRM + Dialer + Supabase 🚀</p>
           </div>
 
@@ -672,7 +708,7 @@ function SalesPageContent() {
               }
             `}
           >
-            Meine Leads ({leads.filter((lead) => lead.assigned_to === "Miguel").length})
+            Meine Leads ({leads.filter((lead) => lead.assigned_to === currentUser).length})
           </button>
 
           <button
@@ -873,7 +909,7 @@ function SalesPageContent() {
                   const { error } = await supabase
                     .from("leads")
                     .update({
-                      assigned_to: "Miguel",
+                      assigned_to: currentUser,
                       assigned_at: assignedAt,
                     })
                     .eq("ID", currentLead.ID);
@@ -888,7 +924,7 @@ function SalesPageContent() {
                       lead.ID === currentLead.ID
                         ? {
                             ...lead,
-                            assigned_to: "Miguel",
+                            assigned_to: currentUser,
                             assigned_at: assignedAt,
                           }
                         : lead

@@ -1,56 +1,72 @@
-export default function HomePage() {
-  return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center p-8">
-      <div className="max-w-5xl w-full">
-        <h1 className="text-6xl font-bold">
-          Sales HQ
-        </h1>
+"use client";
 
-        <p className="text-zinc-400 text-xl mt-4">
-          CRM • Dialer • Closing • Operations
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "../lib/supabase";
+
+export default function LoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function login() {
+    if (!email || !password) {
+      alert("Bitte E-Mail und Passwort eingeben.");
+      return;
+    }
+
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    router.push("/sales");
+  }
+
+  return (
+    <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-8">
+      <div className="w-full max-w-md rounded-3xl bg-zinc-900 border border-zinc-800 p-8">
+        <h1 className="text-4xl font-bold">Sales HQ</h1>
+
+        <p className="text-zinc-400 mt-2">
+          Einloggen und Pipeline starten.
         </p>
 
-        <div className="mt-10 grid grid-cols-3 gap-6">
+        <div className="mt-8 space-y-4">
+          <input
+            type="email"
+            placeholder="E-Mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded-xl bg-zinc-800 border border-zinc-700 p-4 text-white outline-none"
+          />
 
-          <a
-            href="/dashboard"
-            className="rounded-3xl bg-zinc-900 border border-zinc-800 p-8 hover:border-white transition-all"
+          <input
+            type="password"
+            placeholder="Passwort"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded-xl bg-zinc-800 border border-zinc-700 p-4 text-white outline-none"
+          />
+
+          <button
+            onClick={login}
+            disabled={loading}
+            className="w-full rounded-xl bg-white text-black py-4 font-bold"
           >
-            <p className="text-2xl font-bold">
-              Dashboard
-            </p>
-
-            <p className="text-zinc-400 mt-3">
-              KPIs, Priorities und Operations.
-            </p>
-          </a>
-
-          <a
-            href="/sales"
-            className="rounded-3xl bg-zinc-900 border border-zinc-800 p-8 hover:border-white transition-all"
-          >
-            <p className="text-2xl font-bold">
-              Sales Dialer
-            </p>
-
-            <p className="text-zinc-400 mt-3">
-              Setter Workspace & Calls.
-            </p>
-          </a>
-
-          <a
-            href="/closer"
-            className="rounded-3xl bg-zinc-900 border border-zinc-800 p-8 hover:border-white transition-all"
-          >
-            <p className="text-2xl font-bold">
-              Closer
-            </p>
-
-            <p className="text-zinc-400 mt-3">
-              Warme Leads & Abschlüsse.
-            </p>
-          </a>
-
+            {loading ? "Login..." : "Einloggen"}
+          </button>
         </div>
       </div>
     </main>
