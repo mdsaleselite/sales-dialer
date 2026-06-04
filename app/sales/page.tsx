@@ -1,13 +1,18 @@
 "use client";
 
+import { Sidebar } from "../components/crm/Sidebar";
+import { Topbar } from "../components/crm/Topbar";
 import { useEffect, useRef, useState } from "react";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { LeadCard } from "../components/LeadCard";
 import { supabase } from "../../lib/supabase";
 import { Navbar } from "../components/Navbar";
+import { LeadsTable } from "../components/crm/LeadsTable";
+import { TaskPanel } from "../components/crm/TaskPanel";
 
 function SalesPageContent() {
+  const [tasks, setTasks] = useState<any[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [note, setNote] = useState("");
@@ -37,6 +42,7 @@ useEffect(() => {
   const noteRef = useRef<HTMLTextAreaElement | null>(null);
   const searchParams = useSearchParams();
   const leadIdFromUrl = searchParams.get("lead");
+  const currentView = searchParams.get("view");
 
   async function fetchLeads() {
     const { data, error } = await supabase
@@ -94,9 +100,19 @@ useEffect(() => {
     setAllActivities(data || []);
   }
 
+  async function fetchTasks() {
+    const { data } = await supabase
+      .from("tasks")
+      .select("*")
+      .order("due_date");
+
+    setTasks(data || []);
+  }
+
   useEffect(() => {
     fetchLeads();
     fetchAllActivities();
+    fetchTasks();
 
     const interval = setInterval(() => {
       fetchLeads();
@@ -487,9 +503,19 @@ useEffect(() => {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white p-8">
+  <main className="min-h-screen bg-zinc-950 text-white flex">
+    <Sidebar />
+
+    <div className="flex-1 p-8">
       <div className="max-w-7xl mx-auto">
         <Navbar />
+
+        <Topbar
+          currentUser={currentUser}
+          callsToday={todaysCalls}
+          interestedToday={todaysInterested}
+          callbacksToday={todaysCallbackActivities}
+        />
 
         <header className="mb-8 flex items-center justify-between">
           <div>
@@ -838,6 +864,47 @@ useEffect(() => {
           </div>
         )}
 
+        {currentView === "leads" && (
+          <LeadsTable
+            leads={searchedLeads}
+            onSelectLead={(leadId) => {
+              const index = searchedLeads.findIndex(
+                (lead) => lead.ID === leadId
+              );
+
+              if (index !== -1) {
+                setCurrentIndex(index);
+              }
+            }}
+          />
+        )}
+
+        {currentView === "tasks" && (
+          <TaskPanel
+            tasks={tasks}
+            onCreateTask={async (task) => {
+              const { error } = await supabase.from("tasks").insert([
+                {
+                  title: task.title,
+                  note: task.note,
+                  due_date: task.due_date || null,
+                  due_time: task.due_time || null,
+                  assigned_to: currentUser,
+                  completed: false,
+                },
+              ]);
+
+              if (error) {
+                alert(error.message);
+                return;
+              }
+
+              fetchTasks();
+            }}
+          />
+        )}
+
+        {currentView !== "leads" && currentView !== "tasks" && (
         <section className="grid grid-cols-3 gap-6">
           <LeadCard
             lead={{
@@ -1061,9 +1128,11 @@ useEffect(() => {
             </div>
           </div>
         </section>
+        )}
       </div>
-    </main>
-  );
+    </div>
+  </main>
+);
 }
 
 export default function Home() {
