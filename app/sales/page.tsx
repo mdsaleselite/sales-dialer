@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { LeadCard } from "../components/LeadCard";
 import { supabase } from "../../lib/supabase";
 import { Navbar } from "../components/Navbar";
 
-export default function Home() {
+function SalesPageContent() {
   const [leads, setLeads] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [note, setNote] = useState("");
@@ -1026,5 +1027,13 @@ export default function Home() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-zinc-950 text-white p-8">Lädt...</main>}>
+      <SalesPageContent />
+    </Suspense>
   );
 }

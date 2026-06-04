@@ -14,6 +14,7 @@ type Lead = {
   callback_time?: string;
   retry_count?: number;
   priority?: boolean;
+  assigned_to?: string;
 };
 
 type LeadCardProps = {
