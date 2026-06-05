@@ -1,5 +1,6 @@
 "use client";
 
+import { KanbanBoard } from "../components/crm/KanbanBoard";
 import { Sidebar } from "../components/crm/Sidebar";
 import { Topbar } from "../components/crm/Topbar";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +11,7 @@ import { supabase } from "../../lib/supabase";
 import { Navbar } from "../components/Navbar";
 import { LeadsTable } from "../components/crm/LeadsTable";
 import { TaskPanel } from "../components/crm/TaskPanel";
+import { CallbackCenter } from "../components/crm/CallbackCenter";
 
 function SalesPageContent() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -901,10 +903,59 @@ useEffect(() => {
 
               fetchTasks();
             }}
+            onCompleteTask={async (taskId) => {
+              const { error } = await supabase
+                .from("tasks")
+                .update({ completed: true })
+                .eq("id", taskId);
+
+              if (error) {
+                alert(error.message);
+                return;
+              }
+
+              fetchTasks();
+            }}
+          />
+        )}
+        
+
+        {currentView === "pipeline" && (
+          <KanbanBoard
+            leads={searchedLeads}
+            onOpenLead={(leadId) => {
+              const index = searchedLeads.findIndex(
+                (lead) => lead.ID === leadId
+              );
+
+              if (index !== -1) {
+                setCurrentIndex(index);
+                window.history.pushState(null, "", "/sales");
+              } 
+            }}
           />
         )}
 
-        {currentView !== "leads" && currentView !== "tasks" && (
+        {currentView === "callbacks" && (
+          <CallbackCenter
+            leads={searchedLeads}
+            onOpenLead={(leadId) => {
+              const index = searchedLeads.findIndex(
+                (lead) => lead.ID === leadId
+              );
+
+              if (index !== -1) {
+                setCurrentIndex(index);
+                window.history.pushState(null, "", "/sales");
+              }
+            }}
+          />
+        )}
+
+        currentView !== "leads" &&
+        currentView !== "tasks" &&
+        currentView !== "pipeline" &&
+        currentView !== "callbacks"
         <section className="grid grid-cols-3 gap-6">
           <LeadCard
             lead={{
@@ -1128,7 +1179,6 @@ useEffect(() => {
             </div>
           </div>
         </section>
-        )}
       </div>
     </div>
   </main>
